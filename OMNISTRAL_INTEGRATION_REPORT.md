@@ -117,6 +117,88 @@ _MULTIMODAL_MODELS = {
 }
 ```
 
+### 4. Configuration Support for Omnimodal Models (`vllm/transformers_utils/configs/mistral.py`)
+
+**CRITICAL FIX**: vLLM had a validation rule preventing vision and audio from being used together. This must be removed for Omnistral to work.
+
+**File**: `vllm/transformers_utils/configs/mistral.py`
+
+#### Remove the Blocking Assertion
+
+**Original code (line ~48):**
+```python
+assert not (is_vision and is_audio), "Vision and audio are mutually exclusive"
+
+if is_vision:
+    config_dict = _remap_mistral_vision_args(config_dict)
+if is_audio:
+    config_dict = _remap_mistral_audio_args(config_dict)
+```
+
+**Updated code:**
+```python
+# Handle omnimodal (vision + audio) case
+if is_vision and is_audio:
+    config_dict = _remap_mistral_omnimodal_args(config_dict)
+elif is_vision:
+    config_dict = _remap_mistral_vision_args(config_dict)
+elif is_audio:
+    config_dict = _remap_mistral_audio_args(config_dict)
+```
+
+#### Add Omnimodal Configuration Function
+
+Add this new function to handle models with both vision and audio:
+
+```python
+def _remap_mistral_omnimodal_args(config: dict) -> dict:
+    """Remap config for models with both vision and audio (Omnistral)."""
+    multimodal_config = config.get("multimodal", {})
+    
+    # Extract vision config
+    vision_config = multimodal_config.get("vision_encoder_args") or config.get("vision_encoder")
+    
+    # Extract audio config
+    whisper_args = multimodal_config.get("whisper_model_args", {})
+    encoder_args = whisper_args.get("encoder_args", {})
+    downsample_args = whisper_args.get("downsample_args", {})
+
+    quant_config = config.get("quantization_config")
+    
+    config = {
+        "model_type": "omnistral",
+        "architectures": ["OmnistralForConditionalGeneration"],
+        "text_config": PretrainedConfig.from_dict(config),
+        "vision_config": PretrainedConfig.from_dict(vision_config),
+        "audio_config": WhisperConfig(
+            num_mel_bins=encoder_args["audio_encoding_args"]["num_mel_bins"],
+            window_size=encoder_args["audio_encoding_args"]["window_size"],
+            sampling_rate=encoder_args["audio_encoding_args"]["sampling_rate"],
+            hop_length=encoder_args["audio_encoding_args"]["hop_length"],
+            downsample_factor=downsample_args["downsample_factor"],
+            d_model=encoder_args["dim"],
+            encoder_layers=encoder_args["n_layers"],
+            encoder_ffn_dim=encoder_args["hidden_dim"],
+            encoder_attention_heads=encoder_args["n_heads"],
+            vocab_size=encoder_args["vocab_size"],
+            max_source_positions=encoder_args["max_source_positions"],
+            is_encoder_decoder=False,
+        ),
+    }
+    if quant_config:
+        config["quantization_config"] = quant_config
+    
+    return config
+```
+
+This function:
+- Sets `model_type` to `"omnistral"` and `architectures` to `["OmnistralForConditionalGeneration"]`
+- Extracts both vision and audio configurations from the model's multimodal config
+- Creates a unified config with `text_config`, `vision_config`, and `audio_config`
+- Preserves quantization settings if present
+
+**Without this fix, you will get the error**: `"Vision and audio are mutually exclusive"`
+
 ## Supported Modalities
 
 The implementation fully supports the following input combinations:
