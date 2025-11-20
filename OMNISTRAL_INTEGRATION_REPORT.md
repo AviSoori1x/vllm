@@ -133,4 +133,6 @@ The implementation fully supports the following input combinations:
 ## File Structure Summary
 
 *   `vllm/model_executor/models/omnistral.py`: **New File**. Contains the full model implementation, processor adapter, and dummy input builder.
+*   `vllm/model_executor/models/registry.py`: **Modified**. Added model registration in the executor registry.
 *   `tests/models/registry.py`: **Modified**. Added registry entry for test support.
+*   `vllm/transformers_utils/configs/mistral.py`: **Modified**. Removed the assertion that prevented vision+audio combination and added `_remap_mistral_omnimodal_args` to properly configure Omnistral models.
