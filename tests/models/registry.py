@@ -714,6 +714,10 @@ _MULTIMODAL_EXAMPLE_MODELS = {
         trust_remote_code=True,
     ),
     "NVLM_D": _HfExamplesInfo("nvidia/NVLM-D-72B", trust_remote_code=True),
+    "OmnistralForConditionalGeneration": _HfExamplesInfo(
+        "mistralai/Omnistral-Placeholder",
+        is_available_online=False,
+    ),
     "Llama_Nemotron_Nano_VL": _HfExamplesInfo(
         "nvidia/Llama-3.1-Nemotron-Nano-VL-8B-V1",
         trust_remote_code=True,

@@ -341,6 +341,10 @@ _MULTIMODAL_MODELS = {
     ),
     "MolmoForCausalLM": ("molmo", "MolmoForCausalLM"),
     "NVLM_D": ("nvlm_d", "NVLM_D_Model"),
+    "OmnistralForConditionalGeneration": (
+        "omnistral",
+        "OmnistralForConditionalGeneration",
+    ),
     "Ovis": ("ovis", "Ovis"),
     "Ovis2_5": ("ovis2_5", "Ovis2_5"),
     "PaddleOCRVLForConditionalGeneration": (
