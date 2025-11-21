@@ -64,12 +64,28 @@ python -m vllm.entrypoints.openai.api_server \
 ### ✅ "Vision and audio are mutually exclusive"
 - **Fixed in**: `vllm/transformers_utils/configs/mistral.py`
 - **Commit**: e96c506d2
+- **Issue**: Config validation prevented omnimodal models
 
 ### ✅ "Model architectures ['OmnistralForConditionalGeneration'] failed to be inspected"
+Multiple fixes required:
+
+#### Fix 1: API Signature Mismatch
 - **Fixed in**: `vllm/model_executor/models/omnistral.py`
 - **Commit**: 6da152c5f
-- **Issue**: API signature mismatch with current vLLM version
+- **Issue**: `_cached_apply_hf_processor` had old API signature
+
+#### Fix 2: Invalid Module Import
+- **Fixed in**: `vllm/model_executor/models/omnistral.py`
+- **Commit**: 1e55dbb66
+- **Issue**: `ModuleNotFoundError: No module named 'vllm.model_executor.sampling_metadata'`
+- **Solution**: Removed the import and updated `compute_logits` signature
+
+#### Fix 3: Deprecated mistral_common Imports
+- **Fixed in**: `vllm/model_executor/models/omnistral.py`
+- **Commit**: 1e55dbb66
+- **Issue**: `FutureWarning` about `AudioChunk`, `ImageChunk`, `RawAudio` moving from `messages` to `chunk`
+- **Solution**: Import from `mistral_common.protocol.instruct.chunk` instead
 
 ## Latest Commit
-Branch `add-omnistral-model` is at commit `99e032697` with all fixes applied.
+Branch `add-omnistral-model` is at commit `1e55dbb66` with all fixes applied.
 
