@@ -35,7 +35,24 @@ grep -A8 "_cached_apply_hf_processor" vllm/model_executor/models/omnistral.py | 
 
 Expected to see `MultiModalProcessingInfo` in the return type.
 
-### 4. Fix mistral_common Installation
+### 4. Fix NumPy/Numba Compatibility (Critical!)
+
+**Error**: `ImportError: Numba needs NumPy 2.2 or less. Got NumPy 2.3.`
+
+This is a general vLLM dependency issue, not Omnistral-specific.
+
+```bash
+# Quick fix with UV
+uv pip install "numpy<2.3,>=2.0"
+
+# Or use the fix script
+bash fix_numpy_numba.sh
+
+# Verify
+python -c "import numpy, numba; print(f'NumPy: {numpy.__version__}, Numba: {numba.__version__}')"
+```
+
+### 5. Fix mistral_common Installation
 
 #### For UV Users (Recommended)
 ```bash
@@ -65,13 +82,13 @@ pip install --no-cache-dir "mistral_common[image,audio]==1.8.5"
 python -c "from mistral_common.tokens.tokenizers.multimodal import ImageEncoder; print('✓ OK')"
 ```
 
-### 5. Reinstall vLLM (if needed)
+### 6. Reinstall vLLM (if needed)
 If you made changes to C++/CUDA code or want to ensure everything is compiled:
 ```bash
 pip install -e .
 ```
 
-### 6. Run the server
+### 7. Run the server
 
 **IMPORTANT**: When using `--tokenizer-mode mistral`, the `--tokenizer` argument should point to either:
 - A HuggingFace repository (e.g., `mistralai/Pixtral-12B-2409`)
