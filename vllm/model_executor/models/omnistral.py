@@ -728,9 +728,14 @@ class OmnistralForConditionalGeneration(nn.Module, SupportsMultiModal,
             raise ValueError("Incorrect type of images. "
                              f"Got type: {type(images)}")
 
+        images = flatten_bn(images)
+        # Ensure images is a list of 3D tensors (C, H, W)
+        if isinstance(images, torch.Tensor):
+            images = list(images.unbind(0))
+        
         return {
             "type": "pixel_values",
-            "images": flatten_bn(images),
+            "images": images,
         }
 
     def get_input_embeddings(
