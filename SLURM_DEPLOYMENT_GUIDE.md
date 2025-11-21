@@ -166,6 +166,56 @@ Multiple fixes required:
   pip install --no-cache-dir "mistral_common[image,audio]==1.8.5"
   ```
 
+### ⚠️ Tokenizer Loading Issue
+
+#### Error: `HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name'`
+
+**Cause**: When using `--tokenizer-mode mistral`, the tokenizer path is passed to `TransformersMistralTokenizer.from_pretrained()` which expects a directory or HuggingFace repo, not a direct JSON file path.
+
+**Solutions**:
+
+**Option 1: Copy tokenizer to model directory**
+```bash
+# Copy your tokenizer JSON to the model directory with standard naming
+cp /mnt/vast/home/avi/omni/v7.tekken.audio_v3_diarize.json \
+   /mnt/vast/home/avi/omni/eval_merges/slerp_improved/tokenizer.json
+
+# Then omit --tokenizer flag
+python -m vllm.entrypoints.openai.api_server \
+  --model /mnt/vast/home/avi/omni/eval_merges/slerp_improved \
+  --tokenizer-mode mistral \
+  --config-format mistral \
+  --load-format mistral \
+  # ... rest of flags
+```
+
+**Option 2: Create a tokenizer directory**
+```bash
+# Create a directory and put the tokenizer there
+mkdir -p /mnt/vast/home/avi/omni/tokenizer_dir
+cp /mnt/vast/home/avi/omni/v7.tekken.audio_v3_diarize.json \
+   /mnt/vast/home/avi/omni/tokenizer_dir/tokenizer.json
+
+# Point to the directory
+python -m vllm.entrypoints.openai.api_server \
+  --model /mnt/vast/home/avi/omni/eval_merges/slerp_improved \
+  --tokenizer /mnt/vast/home/avi/omni/tokenizer_dir \
+  --tokenizer-mode mistral \
+  # ... rest of flags
+```
+
+**Option 3: Check if tokenizer is already in model directory**
+```bash
+# List files in your model directory
+ls -la /mnt/vast/home/avi/omni/eval_merges/slerp_improved/
+
+# If tokenizer.json or params.json exists, just omit --tokenizer
+python -m vllm.entrypoints.openai.api_server \
+  --model /mnt/vast/home/avi/omni/eval_merges/slerp_improved \
+  --tokenizer-mode mistral \
+  # ... rest of flags
+```
+
 ## Latest Commit
-Branch `add-omnistral-model` is at commit `ce71898dd` with all fixes applied.
+Branch `add-omnistral-model` is at commit `efd732361` with all fixes applied.
 
