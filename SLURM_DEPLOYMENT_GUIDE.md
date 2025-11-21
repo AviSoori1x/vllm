@@ -35,13 +35,19 @@ grep -A8 "_cached_apply_hf_processor" vllm/model_executor/models/omnistral.py | 
 
 Expected to see `MultiModalProcessingInfo` in the return type.
 
-### 4. Reinstall vLLM (if needed)
+### 4. Update Dependencies
+Ensure you have the correct version of `mistral_common`:
+```bash
+pip install -U "mistral_common[image,audio]>=1.8.5"
+```
+
+### 5. Reinstall vLLM (if needed)
 If you made changes to C++/CUDA code or want to ensure everything is compiled:
 ```bash
 pip install -e .
 ```
 
-### 5. Run the server
+### 6. Run the server
 ```bash
 python -m vllm.entrypoints.openai.api_server \
   --model /mnt/vast/home/avi/omni/eval_merges/slerp_improved \
@@ -92,6 +98,16 @@ Multiple fixes required:
 - **Issue**: `AttributeError: type object 'OmnistralForConditionalGeneration' has no attribute 'supported_languages'`
 - **Solution**: Added `supported_languages = ISO639_1_SUPPORTED_LANGS` class attribute required by `SupportsTranscription` interface
 
+### ⚠️ Dependency Issue: mistral_common Version
+
+#### Error: `NameError: name 'MultiModalImageEncoder' is not defined`
+- **Cause**: Incompatible or outdated `mistral_common` package
+- **Required Version**: `mistral_common[image,audio] >= 1.8.5`
+- **Solution**: 
+  ```bash
+  pip install -U "mistral_common[image,audio]>=1.8.5"
+  ```
+
 ## Latest Commit
-Branch `add-omnistral-model` is at commit `3487f2bee` with all fixes applied.
+Branch `add-omnistral-model` is at commit `ce71898dd` with all fixes applied.
 
