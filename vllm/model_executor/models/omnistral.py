@@ -227,7 +227,8 @@ class OmnistralProcessorAdapter:
         if images_processed:
             result["images"] = images_processed
 
-        return result
+        from transformers import BatchFeature
+        return BatchFeature(result)
 
 
 class OmnistralProcessingInfo(BaseProcessingInfo):
@@ -732,7 +733,11 @@ class OmnistralForConditionalGeneration(nn.Module, SupportsMultiModal,
         # Ensure images is a list of 3D tensors (C, H, W)
         if isinstance(images, torch.Tensor):
             images = list(images.unbind(0))
-        
+
+        # Robustly handle potential extra dimensions from batching
+        # If images are (1, C, H, W), squeeze to (C, H, W)
+        images = [img.squeeze(0) if img.dim() == 4 else img for img in images]
+
         return {
             "type": "pixel_values",
             "images": images,
