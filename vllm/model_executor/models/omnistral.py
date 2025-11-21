@@ -32,12 +32,14 @@ from vllm.model_executor.models import SupportsPP
 from vllm.model_executor.sampling_metadata import SamplingMetadata
 from vllm.multimodal import MULTIMODAL_REGISTRY
 from vllm.multimodal.inputs import (MultiModalDataDict, MultiModalFieldConfig,
-                                    MultiModalKwargs, NestedTensors)
+                                    MultiModalKwargsItems, MultiModalUUIDDict,
+                                    NestedTensors)
 from vllm.multimodal.parse import (AudioProcessorItems, ImageProcessorItems,
                                    ImageSize, MultiModalDataItems,
                                    MultiModalDataParser)
 from vllm.multimodal.processing import (BaseMultiModalProcessor,
-                                        BaseProcessingInfo, MultiModalHashes,
+                                        BaseProcessingInfo,
+                                        MultiModalProcessingInfo,
                                         PromptReplacement, PromptUpdate)
 from vllm.multimodal.profiling import BaseDummyInputsBuilder, ProcessorInputs
 from vllm.sequence import IntermediateTensors
@@ -284,6 +286,7 @@ class OmnistralDummyInputsBuilder(
         self,
         seq_len: int,
         mm_counts: Mapping[str, int],
+        mm_options: Mapping[str, object] | None = None,
     ) -> MultiModalDataDict:
         mm_data = {}
 
@@ -291,27 +294,31 @@ class OmnistralDummyInputsBuilder(
         num_audios = mm_counts.get("audio", 0)
         if num_audios > 0:
             target_audio_length = self.info.get_max_audio_array_len()
+            audio_overrides = mm_options.get("audio") if mm_options else None
             mm_data["audio"] = self._get_dummy_audios(
-                length=target_audio_length, num_audios=num_audios)
+                length=target_audio_length, num_audios=num_audios,
+                overrides=audio_overrides)
 
         # Add dummy image data
         num_images = mm_counts.get("image", 0)
         if num_images > 0:
             target_width, target_height = \
                 self.info.get_image_size_with_most_features()
-            mm_data["image"] = self._get_dummy_images(width=target_width,
-                                                      height=target_height,
-                                                      num_images=num_images)
+            image_overrides = mm_options.get("image") if mm_options else None
+            mm_data["image"] = self._get_dummy_images(
+                width=target_width, height=target_height,
+                num_images=num_images, overrides=image_overrides)
         return mm_data
 
     def get_dummy_processor_inputs(
         self,
         seq_len: int,
         mm_counts: Mapping[str, int],
+        mm_options: Mapping[str, object] | None = None,
     ) -> ProcessorInputs:
         tokenizer = self.info.get_tokenizer()
         dummy_text = self.get_dummy_text(mm_counts)
-        dummy_mm_data = self.get_dummy_mm_data(seq_len, mm_counts)
+        dummy_mm_data = self.get_dummy_mm_data(seq_len, mm_counts, mm_options)
         dummy_audios = dummy_mm_data.get("audio", [])
         dummy_images = dummy_mm_data.get("image", [])
 
@@ -363,7 +370,7 @@ class OmnistralMultiModalProcessor(
         self,
         mm_items: MultiModalDataItems,
         hf_processor_mm_kwargs: Mapping[str, object],
-        out_mm_kwargs: MultiModalKwargs,
+        out_mm_kwargs: MultiModalKwargsItems,
     ) -> Sequence[PromptUpdate]:
         processor = self.info.get_hf_processor(**hf_processor_mm_kwargs)
 
@@ -412,20 +419,18 @@ class OmnistralMultiModalProcessor(
         mm_data_items: MultiModalDataItems,
         hf_processor_mm_kwargs: Mapping[str, object],
         tokenization_kwargs: Mapping[str, object],
-        *,
-        return_mm_hashes: bool,
-    ) -> tuple[list[int], MultiModalKwargs, Optional[MultiModalHashes], bool]:
-        prompt_ids, mm_kwargs, mm_hashes, _ = super(
-        )._cached_apply_hf_processor(
+        mm_uuids: MultiModalUUIDDict | None = None,
+    ) -> tuple[list[int], MultiModalProcessingInfo, bool]:
+        prompt_ids, mm_info, _ = super()._cached_apply_hf_processor(
             prompt=prompt,
             mm_data_items=mm_data_items,
             hf_processor_mm_kwargs=hf_processor_mm_kwargs,
             tokenization_kwargs=tokenization_kwargs,
-            return_mm_hashes=return_mm_hashes,
+            mm_uuids=mm_uuids,
         )
 
         # NOTE: The tokens are already inserted by the chat template
-        return prompt_ids, mm_kwargs, mm_hashes, True
+        return prompt_ids, mm_info, True
 
     def _get_data_parser(self) -> MultiModalDataParser:
         sampling_rate = self.info.get_hf_processor().sampling_rate
