@@ -36,19 +36,33 @@ grep -A8 "_cached_apply_hf_processor" vllm/model_executor/models/omnistral.py | 
 Expected to see `MultiModalProcessingInfo` in the return type.
 
 ### 4. Fix mistral_common Installation
-The `mistral_common` library may have a broken installation. Run the fix script:
 
+#### For UV Users (Recommended)
 ```bash
-# Option 1: Use the provided fix script
+# Use the UV-specific fix script
+bash fix_mistral_uv.sh
+
+# Or manually with UV:
+uv pip uninstall mistral_common
+uv cache clean
+uv pip install --no-cache "mistral_common[image,audio]==1.8.5"
+
+# Verify
+python -c "from mistral_common.tokens.tokenizers.multimodal import ImageEncoder; print('✓ OK')"
+```
+
+#### For pip Users
+```bash
+# Use the pip fix script
 bash fix_mistral_common.sh
 
-# Option 2: Manual fix
+# Or manually with pip:
 pip uninstall -y mistral_common
 pip cache remove mistral_common || true
-pip install --no-cache-dir "mistral_common[image,audio]>=1.8.5"
+pip install --no-cache-dir "mistral_common[image,audio]==1.8.5"
 
-# Verify the installation
-python -c "from mistral_common.tokens.tokenizers.multimodal import ImageEncoder; print('✓ mistral_common OK')"
+# Verify
+python -c "from mistral_common.tokens.tokenizers.multimodal import ImageEncoder; print('✓ OK')"
 ```
 
 ### 5. Reinstall vLLM (if needed)
@@ -111,14 +125,19 @@ Multiple fixes required:
 ### ⚠️ Dependency Issue: mistral_common Version
 
 #### Error: `NameError: name 'MultiModalImageEncoder' is not defined`
-- **Cause**: This is a bug in certain versions of `mistral_common` (between 1.8.5 and 1.9.0) where the library references a class name that was renamed in version 1.7.0 but not updated everywhere internally.
-- **Required Version**: `mistral_common[image,audio] >= 1.9.0` (to avoid the buggy versions)
-- **Solution**: 
+- **Cause**: Corrupted or incorrectly installed `mistral_common` package missing the `[image,audio]` extras
+- **Required Version**: `mistral_common[image,audio]==1.8.5` (exact version tested with vLLM)
+- **Solution for UV**: 
   ```bash
-  # Complete reinstall to avoid cached buggy version
+  uv pip uninstall mistral_common
+  uv cache clean
+  uv pip install --no-cache "mistral_common[image,audio]==1.8.5"
+  ```
+- **Solution for pip**: 
+  ```bash
   pip uninstall -y mistral_common
   pip cache remove mistral_common || true
-  pip install --no-cache-dir "mistral_common[image,audio]>=1.9.0"
+  pip install --no-cache-dir "mistral_common[image,audio]==1.8.5"
   ```
 
 ## Latest Commit

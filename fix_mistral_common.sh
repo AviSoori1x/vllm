@@ -11,11 +11,10 @@ pip uninstall -y mistral_common
 echo "Step 2: Clearing pip cache..."
 pip cache remove mistral_common || true
 
-# Step 3: Reinstall with all required extras
-# Note: Some versions between 1.8.5 and 1.9.0 have a bug with MultiModalImageEncoder
-# We install the latest stable version
-echo "Step 3: Reinstalling mistral_common with image and audio support..."
-pip install --no-cache-dir "mistral_common[image,audio]>=1.9.0"
+# Step 3: Install the exact version that works
+# Note: Install exactly 1.8.5 which is the version vLLM is tested with
+echo "Step 3: Installing mistral_common 1.8.5 with image and audio support..."
+pip install --no-cache-dir "mistral_common[image,audio]==1.8.5"
 
 # Step 4: Verify installation
 echo "Step 4: Verifying installation..."
