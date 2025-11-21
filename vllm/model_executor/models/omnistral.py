@@ -57,6 +57,19 @@ from .voxtral import VoxtralProcessorAdapter
 
 logger = init_logger(__name__)
 
+# Supported languages for speech-to-text (from Voxtral)
+ISO639_1_SUPPORTED_LANGS = {
+    "ar": "Arabic",
+    "nl": "Dutch",
+    "en": "English",
+    "fr": "French",
+    "de": "German",
+    "hi": "Hindi",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "es": "Spanish",
+}
+
 
 class OmnistralProcessorAdapter:
     """
@@ -443,6 +456,7 @@ class OmnistralMultiModalProcessor(
 class OmnistralForConditionalGeneration(nn.Module, SupportsMultiModal,
                                         SupportsPP, SupportsTranscription):
     merge_by_field_config = True
+    supported_languages = ISO639_1_SUPPORTED_LANGS
 
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__()
