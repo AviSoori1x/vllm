@@ -111,11 +111,14 @@ Multiple fixes required:
 ### ⚠️ Dependency Issue: mistral_common Version
 
 #### Error: `NameError: name 'MultiModalImageEncoder' is not defined`
-- **Cause**: Incompatible or outdated `mistral_common` package
-- **Required Version**: `mistral_common[image,audio] >= 1.8.5`
+- **Cause**: This is a bug in certain versions of `mistral_common` (between 1.8.5 and 1.9.0) where the library references a class name that was renamed in version 1.7.0 but not updated everywhere internally.
+- **Required Version**: `mistral_common[image,audio] >= 1.9.0` (to avoid the buggy versions)
 - **Solution**: 
   ```bash
-  pip install -U "mistral_common[image,audio]>=1.8.5"
+  # Complete reinstall to avoid cached buggy version
+  pip uninstall -y mistral_common
+  pip cache remove mistral_common || true
+  pip install --no-cache-dir "mistral_common[image,audio]>=1.9.0"
   ```
 
 ## Latest Commit
