@@ -212,6 +212,46 @@ The implementation fully supports the following input combinations:
     *   `Audio + Image`
     *   `Text + Audio + Image` (in any order, with multiple instances of each).
 
+## Troubleshooting Common Errors
+
+### Error 1: "Vision and audio are mutually exclusive"
+**Cause**: The Mistral config adapter had a hardcoded assertion preventing models with both vision and audio encoders.
+
+**Fix**: Update `vllm/transformers_utils/configs/mistral.py` to handle omnimodal models (see Section 4 above).
+
+### Error 2: "Model architectures ['OmnistralForConditionalGeneration'] failed to be inspected"
+**Cause**: API signature mismatch. The `_cached_apply_hf_processor` method signature changed in recent vLLM versions.
+
+**Fix**: Ensure the following imports and signatures are used:
+
+```python
+# In omnistral.py imports:
+from vllm.multimodal.inputs import (
+    MultiModalDataDict,
+    MultiModalFieldConfig,
+    MultiModalKwargsItems,  # Not MultiModalKwargs
+    MultiModalUUIDDict,
+    NestedTensors,
+)
+from vllm.multimodal.processing import (
+    BaseMultiModalProcessor,
+    BaseProcessingInfo,
+    MultiModalProcessingInfo,  # Add this
+    PromptReplacement,
+    PromptUpdate,
+)
+
+# Method signature:
+def _cached_apply_hf_processor(
+    self,
+    prompt: Union[str, list[int]],
+    mm_data_items: MultiModalDataItems,
+    hf_processor_mm_kwargs: Mapping[str, object],
+    tokenization_kwargs: Mapping[str, object],
+    mm_uuids: MultiModalUUIDDict | None = None,  # Add this parameter
+) -> tuple[list[int], MultiModalProcessingInfo, bool]:  # Updated return type
+```
+
 ## File Structure Summary
 
 *   `vllm/model_executor/models/omnistral.py`: **New File**. Contains the full model implementation, processor adapter, and dummy input builder.
