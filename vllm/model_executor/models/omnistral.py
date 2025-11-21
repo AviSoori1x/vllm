@@ -12,9 +12,9 @@ import numpy as np
 import regex as re
 import torch
 import torch.nn as nn
-from mistral_common.protocol.instruct.messages import (AudioChunk, ImageChunk,
-                                                       RawAudio, TextChunk,
-                                                       UserMessage)
+from mistral_common.protocol.instruct.chunk import (AudioChunk, ImageChunk,
+                                                    RawAudio, TextChunk)
+from mistral_common.protocol.instruct.messages import UserMessage
 from mistral_common.protocol.instruct.request import ChatCompletionRequest
 from mistral_common.protocol.transcription.request import TranscriptionRequest
 from mistral_common.tokens.tokenizers.audio import Audio, AudioEncoder
@@ -29,7 +29,6 @@ from vllm.inputs.data import PromptType
 from vllm.logger import init_logger
 from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 from vllm.model_executor.models import SupportsPP
-from vllm.model_executor.sampling_metadata import SamplingMetadata
 from vllm.multimodal import MULTIMODAL_REGISTRY
 from vllm.multimodal.inputs import (MultiModalDataDict, MultiModalFieldConfig,
                                     MultiModalKwargsItems, MultiModalUUIDDict,
@@ -805,10 +804,8 @@ class OmnistralForConditionalGeneration(nn.Module, SupportsMultiModal,
     def compute_logits(
         self,
         hidden_states: torch.Tensor,
-        sampling_metadata: SamplingMetadata,
     ) -> Optional[torch.Tensor]:
-        return self.language_model.compute_logits(hidden_states,
-                                                  sampling_metadata)
+        return self.language_model.compute_logits(hidden_states)
 
     # Speech-to-text support (from Voxtral)
     @classmethod
