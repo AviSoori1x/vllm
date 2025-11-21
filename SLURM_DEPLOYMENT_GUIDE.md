@@ -216,6 +216,43 @@ python -m vllm.entrypoints.openai.api_server \
   # ... rest of flags
 ```
 
+### ⚠️ Worker Initialization Error
+
+#### Error: `RuntimeError: Engine core initialization failed. See root cause above.`
+
+**Cause**: A worker process failed during model loading. The actual error is hidden in the subprocess.
+
+**How to debug**:
+
+1. **Check the full error output:**
+   ```bash
+   # Look at the error file you created
+   cat output.txt
+   
+   # Or run without redirecting stderr to see all errors
+   python -m vllm.entrypoints.openai.api_server \
+     --model /mnt/vast/home/avi/omni/eval_merges/slerp_improved \
+     --tokenizer-mode mistral \
+     --dtype bfloat16 \
+     --config-format mistral \
+     --load-format mistral \
+     --limit-mm-per-prompt '{"image":3,"audio":3}' \
+     --tensor-parallel-size 4 \
+     --served-model-name omnistral \
+     --gpu-memory-utilization 0.95 \
+     --enable-prefix-caching \
+     --max-num-seqs 256
+   ```
+
+2. **Look for worker errors:**
+   Search for lines containing `(Worker pid=...)` or `(EngineCore pid=...)` in the output - these will show the actual root cause.
+
+3. **Common causes:**
+   - Missing model weights for vision or audio encoders
+   - Mismatched weight names during `load_weights()`
+   - CUDA out of memory
+   - Missing configuration keys
+
 ## Latest Commit
-Branch `add-omnistral-model` is at commit `efd732361` with all fixes applied.
+Branch `add-omnistral-model` is at commit `b82714caf` with all fixes applied.
 
