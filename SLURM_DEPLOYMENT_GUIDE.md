@@ -35,10 +35,20 @@ grep -A8 "_cached_apply_hf_processor" vllm/model_executor/models/omnistral.py | 
 
 Expected to see `MultiModalProcessingInfo` in the return type.
 
-### 4. Update Dependencies
-Ensure you have the correct version of `mistral_common`:
+### 4. Fix mistral_common Installation
+The `mistral_common` library may have a broken installation. Run the fix script:
+
 ```bash
-pip install -U "mistral_common[image,audio]>=1.8.5"
+# Option 1: Use the provided fix script
+bash fix_mistral_common.sh
+
+# Option 2: Manual fix
+pip uninstall -y mistral_common
+pip cache remove mistral_common || true
+pip install --no-cache-dir "mistral_common[image,audio]>=1.8.5"
+
+# Verify the installation
+python -c "from mistral_common.tokens.tokenizers.multimodal import ImageEncoder; print('✓ mistral_common OK')"
 ```
 
 ### 5. Reinstall vLLM (if needed)
