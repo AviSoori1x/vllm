@@ -72,10 +72,18 @@ pip install -e .
 ```
 
 ### 6. Run the server
+
+**IMPORTANT**: When using `--tokenizer-mode mistral`, the `--tokenizer` argument should point to either:
+- A HuggingFace repository (e.g., `mistralai/Pixtral-12B-2409`)
+- A **directory** containing the tokenizer file (not the JSON file directly)
+
+If your tokenizer JSON is at `/mnt/vast/home/avi/omni/v7.tekken.audio_v3_diarize.json`, you should either:
+
+**Option A: Point to the directory**
 ```bash
 python -m vllm.entrypoints.openai.api_server \
   --model /mnt/vast/home/avi/omni/eval_merges/slerp_improved \
-  --tokenizer /mnt/vast/home/avi/omni/v7.tekken.audio_v3_diarize.json \
+  --tokenizer /mnt/vast/home/avi/omni \
   --dtype bfloat16 \
   --config-format mistral \
   --load-format mistral \
@@ -88,6 +96,24 @@ python -m vllm.entrypoints.openai.api_server \
   --max-num-seqs 256 \
   2>output.txt
 ```
+
+**Option B: Use the same directory as model (if tokenizer is there)**
+```bash
+python -m vllm.entrypoints.openai.api_server \
+  --model /mnt/vast/home/avi/omni/eval_merges/slerp_improved \
+  --dtype bfloat16 \
+  --config-format mistral \
+  --load-format mistral \
+  --tokenizer-mode mistral \
+  --limit-mm-per-prompt '{"image":3,"audio":3}' \
+  --tensor-parallel-size 4 \
+  --served-model-name omnistral \
+  --gpu-memory-utilization 0.95 \
+  --enable-prefix-caching \
+  --max-num-seqs 256 \
+  2>output.txt
+```
+(This will use the tokenizer from the model directory)
 
 ## Common Errors Fixed
 
