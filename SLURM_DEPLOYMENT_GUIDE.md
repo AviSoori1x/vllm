@@ -86,6 +86,12 @@ Multiple fixes required:
 - **Issue**: `FutureWarning` about `AudioChunk`, `ImageChunk`, `RawAudio` moving from `messages` to `chunk`
 - **Solution**: Import from `mistral_common.protocol.instruct.chunk` instead
 
+#### Fix 4: Missing supported_languages Attribute
+- **Fixed in**: `vllm/model_executor/models/omnistral.py`
+- **Commit**: 3487f2bee
+- **Issue**: `AttributeError: type object 'OmnistralForConditionalGeneration' has no attribute 'supported_languages'`
+- **Solution**: Added `supported_languages = ISO639_1_SUPPORTED_LANGS` class attribute required by `SupportsTranscription` interface
+
 ## Latest Commit
-Branch `add-omnistral-model` is at commit `1e55dbb66` with all fixes applied.
+Branch `add-omnistral-model` is at commit `3487f2bee` with all fixes applied.
 
