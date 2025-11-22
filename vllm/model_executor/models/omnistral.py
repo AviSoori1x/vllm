@@ -725,18 +725,50 @@ class OmnistralForConditionalGeneration(nn.Module, SupportsMultiModal,
         images = kwargs.pop("images", None)
         if images is None:
             return None
-        if not isinstance(images, (torch.Tensor, list)):
+        if isinstance(images, torch.Tensor):
+            # Accept either (B, N, C, H, W) or (N, C, H, W)
+            if images.dim() == 5:
+                images = images.flatten(0, 1)
+            elif images.dim() != 4:
+                raise ValueError("Incorrect shape of images tensor. "
+                                 f"Expected 4D or 5D, got: {images.dim()}D")
+
+            images = list(images.unbind(0))
+        elif isinstance(images, list):
+            flattened_images = []
+            for img in images:
+                if not isinstance(img, torch.Tensor):
+                    raise ValueError("Incorrect type inside images list. "
+                                     f"Got type: {type(img)}")
+
+                if img.dim() == 5:
+                    # Handle potential (B, N, C, H, W) tensors inside the list
+                    flattened_images.extend(list(img.flatten(0, 1).unbind(0)))
+                elif img.dim() == 4:
+                    # Treat the leading dimension as batch
+                    flattened_images.extend(list(img.unbind(0)))
+                elif img.dim() == 3:
+                    flattened_images.append(img)
+                else:
+                    raise ValueError("Incorrect shape of image tensor in list. "
+                                     f"Expected 3D-5D, got: {img.dim()}D")
+
+            images = flattened_images
+        else:
             raise ValueError("Incorrect type of images. "
                              f"Got type: {type(images)}")
 
-        images = flatten_bn(images)
         # Ensure images is a list of 3D tensors (C, H, W)
-        if isinstance(images, torch.Tensor):
-            images = list(images.unbind(0))
+        normalized_images = []
+        for img in images:
+            if img.dim() == 4 and img.shape[0] == 1:
+                img = img.squeeze(0)
+            if img.dim() != 3:
+                raise ValueError("Incorrect image tensor rank after normalization. "
+                                 f"Expected 3D, got: {img.dim()}D")
+            normalized_images.append(img)
 
-        # Robustly handle potential extra dimensions from batching
-        # If images are (1, C, H, W), squeeze to (C, H, W)
-        images = [img.squeeze(0) if img.dim() == 4 else img for img in images]
+        images = normalized_images
 
         return {
             "type": "pixel_values",
